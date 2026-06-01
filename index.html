@@ -1,0 +1,2773 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mojikumi — 文字組整形ツール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F1EC;
+  --bg-soft:#FBF7F3;
+  --panel:#FFFFFFE6;
+  --ink:#2D2620;
+  --ink-soft:#6B5F55;
+  --line:#E5DCD2;
+  --line-soft:#EFE7DE;
+  --accent:#C97A6B;
+  --accent-soft:#E8C5BD;
+  --accent-deep:#A85A4C;
+  --sage:#9BA88A;
+  --sage-soft:#CFD6C3;
+  --warn:#D4A574;
+  --shadow:0 4px 24px rgba(173, 140, 115, 0.08);
+  --shadow-soft:0 2px 12px rgba(173, 140, 115, 0.06);
+  --radius:14px;
+  --radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Zen Maru Gothic', sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.7;
+  font-feature-settings:"palt";
+  letter-spacing:0.02em;
+  background-image:
+    radial-gradient(at 20% 10%, rgba(232,197,189,0.25) 0px, transparent 50%),
+    radial-gradient(at 80% 90%, rgba(207,214,195,0.2) 0px, transparent 50%);
+  min-height:100vh;
+}
+.app{
+  max-width:1280px;
+  margin:0 auto;
+  padding:32px 28px 60px;
+}
+.header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  margin-bottom:28px;
+  padding-bottom:20px;
+  border-bottom:1px solid var(--line);
+  flex-wrap:wrap;
+  gap:16px;
+}
+.brand{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.brand h1{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-weight:700;
+  font-size:26px;
+  letter-spacing:0.06em;
+  color:var(--ink);
+}
+.brand .credit{
+  font-size:11px;
+  color:var(--ink-soft);
+  letter-spacing:0.08em;
+  padding-left:14px;
+  border-left:1px solid var(--line);
+}
+.preset-bar{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.preset-bar label{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:0.1em;
+  color:var(--ink-soft);
+  margin-right:4px;
+}
+select, .btn{
+  font-family:inherit;
+  font-size:13px;
+  padding:8px 14px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--line);
+  background:var(--bg-soft);
+  color:var(--ink);
+  cursor:pointer;
+  transition:all 0.2s ease;
+  letter-spacing:0.04em;
+}
+select:hover, .btn:hover{
+  border-color:var(--accent-soft);
+  background:#fff;
+}
+.btn-primary{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
+.btn-primary:hover{
+  background:var(--accent-deep);
+  border-color:var(--accent-deep);
+  color:#fff;
+}
+.btn-ghost{background:transparent}
+.btn-sm{padding:6px 10px;font-size:12px}
+
+.workspace{
+  display:grid;
+  grid-template-columns:1fr 380px;
+  gap:20px;
+  margin-bottom:24px;
+  align-items:start;
+}
+.editor-area{
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+.panes{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+.sidebar{
+  background:var(--panel);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  position:sticky;
+  top:20px;
+  max-height:calc(100vh - 40px);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.sidebar-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 18px;
+  border-bottom:1px solid var(--line-soft);
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.12em;
+  color:var(--ink);
+  background:var(--bg-soft);
+}
+.sidebar-actions{display:flex;gap:4px}
+.btn-icon{
+  width:24px;height:24px;
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:6px;
+  cursor:pointer;
+  color:var(--ink-soft);
+  font-size:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.15s ease;
+}
+.btn-icon:hover{
+  border-color:var(--accent-soft);
+  color:var(--accent);
+}
+.sidebar .options{
+  overflow-y:auto;
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  padding:0;
+  background:transparent;
+  flex:1;
+}
+.sidebar .options::-webkit-scrollbar{width:6px}
+.sidebar .options::-webkit-scrollbar-track{background:transparent}
+.sidebar .options::-webkit-scrollbar-thumb{
+  background:var(--line);
+  border-radius:3px;
+}
+.sidebar .options::-webkit-scrollbar-thumb:hover{
+  background:var(--accent-soft);
+}
+@media(max-width:1100px){
+  .workspace{grid-template-columns:1fr}
+  .sidebar{position:static;max-height:none}
+}
+@media(max-width:720px){
+  .panes{grid-template-columns:1fr}
+}
+.pane{
+  background:var(--panel);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:var(--shadow);
+  display:flex;
+  flex-direction:column;
+  min-height:340px;
+}
+.pane-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--line-soft);
+}
+.pane-title{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:13px;
+  font-weight:500;
+  letter-spacing:0.15em;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.pane-title::before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--accent);
+}
+.pane.output .pane-title::before{background:var(--sage)}
+.pane-actions{display:flex;gap:6px;align-items:center}
+.count{
+  font-family:'DM Sans', sans-serif;
+  font-size:11px;
+  color:var(--ink-soft);
+  letter-spacing:0.05em;
+}
+
+textarea{
+  width:100%;
+  flex:1;
+  border:none;
+  background:transparent;
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:14px;
+  line-height:1.9;
+  color:var(--ink);
+  resize:vertical;
+  min-height:340px;
+  padding:4px;
+  letter-spacing:0.03em;
+}
+textarea:focus{outline:none}
+textarea::placeholder{color:#C5B8AC}
+
+.control-bar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+  padding:14px 18px;
+  background:var(--bg-soft);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  flex-wrap:wrap;
+  gap:12px;
+}
+.toggle{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:13px;
+  cursor:pointer;
+  user-select:none;
+}
+.toggle input{display:none}
+.toggle .switch{
+  width:36px;
+  height:20px;
+  background:var(--line);
+  border-radius:10px;
+  position:relative;
+  transition:background 0.25s ease;
+}
+.toggle .switch::after{
+  content:"";
+  position:absolute;
+  top:2px;left:2px;
+  width:16px;height:16px;
+  border-radius:50%;
+  background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,0.15);
+  transition:transform 0.25s ease;
+}
+.toggle input:checked + .switch{background:var(--accent)}
+.toggle input:checked + .switch::after{transform:translateX(16px)}
+
+.options{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:6px;
+  box-shadow:var(--shadow-soft);
+}
+.opt-group{
+  border-bottom:1px solid var(--line-soft);
+}
+.opt-group:last-child{border-bottom:none}
+.opt-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 18px;
+  cursor:pointer;
+  user-select:none;
+  transition:background 0.15s ease;
+}
+.opt-head:hover{background:var(--bg-soft)}
+.opt-head h3{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:0.12em;
+  color:var(--ink);
+}
+.opt-head .arrow{
+  font-family:'DM Sans', sans-serif;
+  color:var(--accent);
+  transition:transform 0.2s ease;
+  font-size:14px;
+}
+.opt-group.open .opt-head .arrow{transform:rotate(90deg)}
+.opt-body{
+  display:none;
+  flex-direction:column;
+  padding:4px 18px 16px;
+  gap:10px;
+}
+.opt-group.open .opt-body{display:flex}
+.opt-item{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  font-size:13px;
+  cursor:pointer;
+  user-select:none;
+  width:100%;
+  line-height:1.5;
+}
+.opt-item input[type="checkbox"],
+.opt-item input[type="radio"]{
+  flex-shrink:0;
+  margin-top:2px;
+}
+.opt-item input[type="checkbox"]{
+  appearance:none;
+  width:16px;height:16px;
+  border:1.5px solid var(--line);
+  border-radius:4px;
+  background:#fff;
+  cursor:pointer;
+  position:relative;
+  transition:all 0.15s ease;
+}
+.opt-item input[type="checkbox"]:checked{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+.opt-item input[type="checkbox"]:checked::after{
+  content:"✓";
+  position:absolute;
+  color:#fff;
+  font-size:11px;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  line-height:1;
+}
+.opt-item input[type="radio"]{
+  appearance:none;
+  width:16px;height:16px;
+  border:1.5px solid var(--line);
+  border-radius:50%;
+  background:#fff;
+  cursor:pointer;
+  position:relative;
+  transition:all 0.15s ease;
+}
+.opt-item input[type="radio"]:checked{border-color:var(--accent)}
+.opt-item input[type="radio"]:checked::after{
+  content:"";
+  position:absolute;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--accent);
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+}
+.radio-group{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:6px 12px;
+  background:var(--bg-soft);
+  border-radius:var(--radius-sm);
+  border:1px solid var(--line-soft);
+}
+.radio-group .group-label{
+  font-size:11px;
+  font-family:'DM Sans', sans-serif;
+  letter-spacing:0.1em;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  margin-bottom:2px;
+}
+
+.find-bar{
+  display:none;
+  background:var(--panel);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px 16px;
+  margin-bottom:20px;
+  flex-direction:column;
+  gap:10px;
+  box-shadow:var(--shadow-soft);
+  animation:slideDown 0.2s ease;
+}
+.find-bar.show{display:flex}
+@keyframes slideDown{
+  from{opacity:0;transform:translateY(-4px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.find-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.find-input{
+  flex:1;
+  min-width:0;
+  font-family:inherit;
+  font-size:13px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:#fff;
+  color:var(--ink);
+  letter-spacing:0.03em;
+}
+.find-input:focus{
+  outline:none;
+  border-color:var(--accent-soft);
+  box-shadow:0 0 0 3px rgba(232,197,189,0.25);
+}
+.find-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  width:340px;
+  flex-shrink:0;
+  justify-content:flex-end;
+}
+.find-count{
+  font-family:'DM Sans', sans-serif;
+  font-size:11px;
+  color:var(--ink-soft);
+  letter-spacing:0.05em;
+  padding:0 4px;
+  white-space:nowrap;
+  min-width:50px;
+  text-align:center;
+}
+.find-count.has-match{color:var(--accent-deep);font-weight:500}
+.find-close{
+  width:24px;height:24px;
+  border:none;
+  background:transparent;
+  border-radius:50%;
+  cursor:pointer;
+  color:var(--ink-soft);
+  font-size:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.15s ease;
+  padding:0;
+}
+.find-close:hover{
+  background:var(--line);
+  color:var(--ink);
+}
+.find-options{
+  display:flex;
+  gap:14px;
+  padding-top:2px;
+}
+.find-opt{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  color:var(--ink-soft);
+  cursor:pointer;
+  user-select:none;
+}
+.find-opt input[type="checkbox"]{
+  appearance:none;
+  width:14px;height:14px;
+  border:1.5px solid var(--line);
+  border-radius:3px;
+  background:#fff;
+  cursor:pointer;
+  position:relative;
+  transition:all 0.15s ease;
+  flex-shrink:0;
+}
+.find-opt input[type="checkbox"]:checked{
+  background:var(--accent);
+  border-color:var(--accent);
+}
+.find-opt input[type="checkbox"]:checked::after{
+  content:"✓";
+  position:absolute;
+  color:#fff;
+  font-size:10px;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  line-height:1;
+}
+
+@media(max-width:720px){
+  .find-row{flex-direction:column;align-items:stretch}
+  .find-actions{width:auto;justify-content:flex-start;flex-wrap:wrap}
+}
+
+.preview-banner{
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 12px;
+  background:#FFF3D6;
+  border:1px solid #E8D4B5;
+  border-radius:6px;
+  font-size:12px;
+  color:#7A5A33;
+  margin-top:4px;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.preview-banner.show{display:flex}
+
+.btn-preview{
+  position:relative;
+  transition:all 0.2s ease;
+}
+.btn-preview.active{
+  background:var(--warn);
+  border-color:var(--warn);
+  color:#fff;
+  box-shadow:0 0 0 3px rgba(212,165,116,0.25);
+}
+.btn-preview.active:hover{
+  background:#C29260;
+  border-color:#C29260;
+  color:#fff;
+}
+
+.btn-tategumi.active{
+  background:var(--sage);
+  border-color:var(--sage);
+  color:#fff;
+  box-shadow:0 0 0 3px rgba(155,168,138,0.25);
+}
+.btn-tategumi.active:hover{
+  background:#7E8B6D;
+  border-color:#7E8B6D;
+  color:#fff;
+}
+
+.tategumi-preview{
+  display:none;
+  writing-mode:vertical-rl;
+  -webkit-writing-mode:vertical-rl;
+  text-orientation:upright;
+  -webkit-text-orientation:upright;
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:15px;
+  line-height:2.0;
+  letter-spacing:0.05em;
+  height:380px;
+  padding:18px 14px;
+  background:#FBF7F3;
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
+  overflow-x:auto;
+  overflow-y:hidden;
+  white-space:pre-wrap;
+  color:var(--ink);
+  font-feature-settings:"vert";
+}
+.tategumi-preview.show{display:block}
+.tategumi-preview::-webkit-scrollbar{height:8px}
+.tategumi-preview::-webkit-scrollbar-track{background:transparent}
+.tategumi-preview::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.tategumi-preview::-webkit-scrollbar-thumb:hover{background:var(--accent-soft)}
+.pane.output.tategumi-mode textarea{display:none}
+.preview-label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-weight:500;
+  letter-spacing:0.05em;
+}
+.preview-label::before{
+  content:"●";
+  color:var(--warn);
+  font-size:8px;
+  animation:blink 1.4s ease-in-out infinite;
+}
+@keyframes blink{
+  0%,100%{opacity:1}
+  50%{opacity:0.4}
+}
+.preview-actions{display:flex;gap:6px}
+
+textarea.preview-mode{
+  background:#FFFBF0;
+  border-left:3px solid var(--warn);
+  padding-left:8px;
+}
+
+.warning{
+  margin-top:14px;
+  padding:12px 16px;
+  background:#FBF3E9;
+  border:1px solid #E8D4B5;
+  border-radius:var(--radius-sm);
+  font-size:12px;
+  color:#7A5A33;
+  display:none;
+}
+.warning.show{display:block}
+.warning .label{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:0.1em;
+  color:var(--warn);
+  margin-bottom:4px;
+  display:block;
+}
+
+.toast{
+  position:fixed;
+  bottom:30px;
+  left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--ink);
+  color:#fff;
+  padding:10px 22px;
+  border-radius:24px;
+  font-size:13px;
+  letter-spacing:0.05em;
+  opacity:0;
+  transition:all 0.3s ease;
+  pointer-events:none;
+  box-shadow:0 8px 24px rgba(0,0,0,0.2);
+}
+.toast.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+
+.footer{
+  margin-top:40px;
+  text-align:center;
+  font-family:'Zen Maru Gothic', sans-serif;
+  color:var(--ink-soft);
+}
+.footer-main{
+  font-size:11px;
+  letter-spacing:0.1em;
+  margin-bottom:8px;
+}
+.footer-credit{
+  font-size:10px;
+  letter-spacing:0.08em;
+  color:#9C8D7F;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.footer-credit .dot-sep{
+  color:var(--accent-soft);
+}
+
+/* マニュアルモーダル */
+.btn-help{
+  background:#fff;
+  border:1px solid var(--line);
+  margin-left:8px;
+}
+.btn-help:hover{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--accent);
+}
+.modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(45,38,32,0.4);
+  backdrop-filter:blur(4px);
+  z-index:1000;
+  align-items:center;
+  justify-content:center;
+  padding:40px 20px;
+  animation:fadeIn 0.25s ease;
+}
+.modal-overlay.show{display:flex}
+@keyframes fadeIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+.modal{
+  background:#fff;
+  border-radius:18px;
+  width:100%;
+  max-width:960px;
+  max-height:100%;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(45,38,32,0.25);
+  animation:slideUp 0.3s ease;
+}
+@keyframes slideUp{
+  from{transform:translateY(20px);opacity:0}
+  to{transform:translateY(0);opacity:1}
+}
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:18px 26px;
+  border-bottom:1px solid var(--line-soft);
+  background:linear-gradient(to right, #FBF7F3, #F6F1EC);
+}
+.modal-head h2{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:18px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  color:var(--ink);
+}
+.modal-close{
+  width:32px;height:32px;
+  border:none;
+  background:transparent;
+  border-radius:50%;
+  cursor:pointer;
+  font-size:20px;
+  color:var(--ink-soft);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.15s ease;
+}
+.modal-close:hover{
+  background:var(--line);
+  color:var(--ink);
+}
+.modal-search-bar{
+  padding:14px 26px;
+  border-bottom:1px solid var(--line-soft);
+  background:var(--bg-soft);
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.modal-search-bar input{
+  flex:1;
+  font-family:inherit;
+  font-size:14px;
+  padding:8px 14px;
+  border:1px solid var(--line);
+  border-radius:20px;
+  background:#fff;
+  color:var(--ink);
+  letter-spacing:0.03em;
+}
+.modal-search-bar input:focus{
+  outline:none;
+  border-color:var(--accent-soft);
+  box-shadow:0 0 0 3px rgba(232,197,189,0.25);
+}
+.help-hit{
+  font-size:11px;
+  font-family:'DM Sans', sans-serif;
+  letter-spacing:0.05em;
+  color:var(--ink-soft);
+  white-space:nowrap;
+}
+.help-hit.has-match{color:var(--accent-deep);font-weight:500}
+.modal-body{
+  display:grid;
+  grid-template-columns:200px 1fr;
+  flex:1;
+  overflow:hidden;
+}
+.modal-nav{
+  border-right:1px solid var(--line-soft);
+  background:var(--bg-soft);
+  padding:18px 0;
+  overflow-y:auto;
+}
+.modal-nav .nav-link{
+  display:block;
+  padding:9px 22px;
+  font-size:13px;
+  color:var(--ink-soft);
+  text-decoration:none;
+  border-left:3px solid transparent;
+  transition:all 0.15s ease;
+  letter-spacing:0.06em;
+}
+.modal-nav .nav-link:hover{
+  color:var(--ink);
+  background:rgba(232,197,189,0.15);
+}
+.modal-nav .nav-link.active{
+  color:var(--accent-deep);
+  border-left-color:var(--accent);
+  background:#fff;
+  font-weight:500;
+}
+.modal-content{
+  overflow-y:auto;
+  padding:24px 32px 60px;
+  scroll-behavior:smooth;
+}
+.modal-content::-webkit-scrollbar{width:8px}
+.modal-content::-webkit-scrollbar-track{background:transparent}
+.modal-content::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.modal-content::-webkit-scrollbar-thumb:hover{background:var(--accent-soft)}
+
+.help-sec{
+  margin-bottom:36px;
+  scroll-margin-top:16px;
+}
+.help-sec h3{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:18px;
+  font-weight:700;
+  letter-spacing:0.06em;
+  margin-bottom:14px;
+  padding-bottom:8px;
+  border-bottom:2px solid var(--accent-soft);
+  color:var(--ink);
+}
+.help-sec h4{
+  font-family:'Zen Maru Gothic', sans-serif;
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:0.08em;
+  margin:20px 0 10px;
+  color:var(--accent-deep);
+  padding-left:10px;
+  border-left:3px solid var(--accent);
+}
+.help-sec p{
+  font-size:13px;
+  line-height:1.85;
+  color:var(--ink);
+  margin-bottom:10px;
+}
+.help-list{
+  list-style:none;
+  padding-left:0;
+  margin-bottom:14px;
+}
+.help-list li{
+  font-size:13px;
+  line-height:1.8;
+  padding-left:18px;
+  position:relative;
+  margin-bottom:6px;
+  color:var(--ink);
+}
+.help-list li::before{
+  content:"・";
+  position:absolute;
+  left:0;
+  color:var(--accent);
+  font-weight:700;
+}
+.help-steps{
+  counter-reset:step;
+  list-style:none;
+  padding-left:0;
+  margin-bottom:14px;
+}
+.help-steps li{
+  counter-increment:step;
+  position:relative;
+  padding-left:36px;
+  margin-bottom:14px;
+  font-size:13px;
+  line-height:1.8;
+}
+.help-steps li::before{
+  content:counter(step);
+  position:absolute;
+  left:0;
+  top:0;
+  width:24px;
+  height:24px;
+  background:var(--accent);
+  color:#fff;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'DM Sans', sans-serif;
+  font-size:12px;
+  font-weight:500;
+}
+.help-steps li strong{
+  display:block;
+  margin-bottom:2px;
+  color:var(--ink);
+}
+.help-steps li p{
+  font-size:13px;
+  color:var(--ink-soft);
+  margin:0;
+  line-height:1.7;
+}
+.help-dl{
+  margin-bottom:14px;
+}
+.help-dl dt{
+  font-size:13px;
+  font-weight:500;
+  color:var(--ink);
+  margin-top:10px;
+  padding-left:12px;
+  border-left:2px solid var(--sage-soft);
+  letter-spacing:0.04em;
+}
+.help-dl dd{
+  font-size:12.5px;
+  line-height:1.8;
+  color:var(--ink-soft);
+  padding-left:12px;
+  margin-bottom:4px;
+  margin-left:0;
+}
+.help-tip{
+  background:#FBF3E9;
+  border:1px solid #E8D4B5;
+  border-radius:8px;
+  padding:11px 14px;
+  font-size:12.5px;
+  line-height:1.75;
+  color:#7A5A33;
+  margin:14px 0;
+}
+.help-tip strong{
+  color:var(--warn);
+}
+.help-table{
+  border-collapse:collapse;
+  width:100%;
+  font-size:13px;
+  margin-bottom:14px;
+}
+.help-table thead{
+  background:var(--bg-soft);
+}
+.help-table th, .help-table td{
+  border:1px solid var(--line);
+  padding:9px 12px;
+  text-align:left;
+}
+.help-table th{
+  font-weight:500;
+  color:var(--ink);
+  letter-spacing:0.05em;
+}
+.help-table td{
+  color:var(--ink-soft);
+}
+kbd{
+  display:inline-block;
+  padding:2px 6px;
+  font-family:'DM Sans', sans-serif;
+  font-size:11px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-bottom-width:2px;
+  border-radius:4px;
+  color:var(--ink);
+  letter-spacing:0.05em;
+}
+code{
+  font-family:'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-size:12px;
+  background:var(--bg-soft);
+  padding:1px 6px;
+  border-radius:3px;
+  color:var(--accent-deep);
+  letter-spacing:0;
+}
+
+/* 検索ハイライト */
+mark.help-mark{
+  background:#FFE9A0;
+  color:var(--ink);
+  padding:0 2px;
+  border-radius:2px;
+}
+.help-sec.hidden{display:none}
+
+@media(max-width:760px){
+  .modal-body{grid-template-columns:1fr}
+  .modal-nav{
+    border-right:none;
+    border-bottom:1px solid var(--line-soft);
+    padding:10px;
+    display:flex;
+    overflow-x:auto;
+    gap:4px;
+    max-height:none;
+  }
+  .modal-nav .nav-link{
+    border-left:none;
+    border-bottom:3px solid transparent;
+    white-space:nowrap;
+    padding:8px 12px;
+  }
+  .modal-nav .nav-link.active{
+    border-bottom-color:var(--accent);
+    border-left-color:transparent;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="brand">
+      <h1>文字整形ツール</h1>
+      <span class="credit">作成：TSUGU外部</span>
+      <button class="btn btn-sm btn-help" id="helpBtn">📖 使い方</button>
+    </div>
+    <div class="preset-bar">
+      <label>プリセット</label>
+      <select id="presetSelect"></select>
+      <button class="btn btn-sm" id="presetSave">保存</button>
+      <button class="btn btn-sm btn-ghost" id="presetDelete">削除</button>
+      <button class="btn btn-sm btn-ghost" id="presetExport">書出</button>
+      <button class="btn btn-sm btn-ghost" id="presetImport">読込</button>
+    </div>
+  </header>
+
+  <div class="find-bar" id="findBar">
+    <div class="find-row">
+      <input type="text" id="findInput" placeholder="検索する文字..." class="find-input">
+      <div class="find-actions">
+        <span class="find-count" id="findCount">0件</span>
+        <button class="btn btn-sm btn-ghost" id="findPrev" title="前へ">‹</button>
+        <button class="btn btn-sm btn-ghost" id="findNext" title="次へ">›</button>
+        <button class="btn-icon find-close" id="findClose" title="閉じる">×</button>
+      </div>
+    </div>
+    <div class="find-row">
+      <input type="text" id="replaceInput" placeholder="置換する文字..." class="find-input">
+      <div class="find-actions">
+        <button class="btn btn-sm btn-preview" id="previewBtn">👁 プレビュー</button>
+        <button class="btn btn-sm" id="replaceBtn">1件置換</button>
+        <button class="btn btn-sm btn-primary" id="replaceAllBtn">すべて置換</button>
+      </div>
+    </div>
+    <div class="find-options">
+      <label class="find-opt">
+        <input type="checkbox" id="findCase">
+        <span>大文字小文字を区別</span>
+      </label>
+      <label class="find-opt">
+        <input type="checkbox" id="findRegex">
+        <span>正規表現</span>
+      </label>
+    </div>
+    <div class="preview-banner" id="previewBanner">
+      <span class="preview-label">プレビュー表示中 <span id="previewInfo"></span></span>
+      <div class="preview-actions">
+        <button class="btn btn-sm btn-ghost" id="cancelPreviewBtn">元に戻す</button>
+        <button class="btn btn-sm btn-primary" id="confirmPreviewBtn">この内容で確定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div class="editor-area">
+      <div class="panes">
+        <div class="pane">
+          <div class="pane-head">
+            <span class="pane-title">入力</span>
+            <div class="pane-actions">
+              <span class="count" id="inputCount">0 文字</span>
+              <button class="btn btn-sm btn-ghost" id="clearBtn">クリア</button>
+              <button class="btn btn-sm btn-ghost" id="sampleBtn">サンプル</button>
+            </div>
+          </div>
+          <textarea id="input" placeholder="ここにテキストを入力してください..."></textarea>
+        </div>
+
+        <div class="pane output">
+          <div class="pane-head">
+            <span class="pane-title">出力</span>
+            <div class="pane-actions">
+              <span class="count" id="outputCount">0 文字</span>
+              <button class="btn btn-sm btn-ghost btn-tategumi" id="tategumiBtn" title="縦組みプレビュー">📜 縦組み</button>
+              <button class="btn btn-sm btn-ghost" id="findToggleBtn" title="検索置換 (Ctrl+F)">🔍 検索置換</button>
+              <button class="btn btn-sm btn-primary" id="copyBtn">コピー</button>
+            </div>
+          </div>
+          <textarea id="output" placeholder="変換結果がここに表示されます..."></textarea>
+          <div class="tategumi-preview" id="tategumiPreview"></div>
+          <div class="warning" id="warning">
+            <span class="label">⚠ 環境依存文字</span>
+            <span id="warningText"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-bar">
+        <label class="toggle">
+          <input type="checkbox" id="realtimeToggle" checked>
+          <span class="switch"></span>
+          <span>リアルタイム変換</span>
+        </label>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="resetBtn">設定をリセット</button>
+          <button class="btn btn-primary" id="convertBtn">変換実行</button>
+        </div>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <span>変換オプション</span>
+        <div class="sidebar-actions">
+          <button class="btn-icon" id="expandAll" title="すべて開く">▾</button>
+          <button class="btn-icon" id="collapseAll" title="すべて閉じる">▴</button>
+        </div>
+      </div>
+      <div class="options" id="optionsContainer"></div>
+    </aside>
+  </div>
+
+  <div class="footer">
+    <div class="footer-main">エディトリアル & DTP のための文字組ツール</div>
+    <div class="footer-credit">
+      <span>2026.05.19</span>
+      <span class="dot-sep">·</span>
+      <span>ver. 1.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- マニュアルモーダル -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2>📖 使い方ガイド</h2>
+      <button class="modal-close" id="helpClose" title="閉じる">×</button>
+    </div>
+    <div class="modal-search-bar">
+      <input type="text" id="helpSearch" placeholder="🔍 ガイド内を検索 (例:波ダッシュ、株式会社)">
+      <span class="help-hit" id="helpHit"></span>
+    </div>
+    <div class="modal-body">
+      <nav class="modal-nav">
+        <a href="#sec-intro" class="nav-link">ツールについて</a>
+        <a href="#sec-quick" class="nav-link">基本の使い方</a>
+        <a href="#sec-options" class="nav-link">オプション詳細</a>
+        <a href="#sec-preset" class="nav-link">プリセット</a>
+        <a href="#sec-find" class="nav-link">検索置換</a>
+        <a href="#sec-tategumi" class="nav-link">縦組みプレビュー</a>
+        <a href="#sec-glossary" class="nav-link">用語集</a>
+        <a href="#sec-faq" class="nav-link">FAQ</a>
+        <a href="#sec-shortcut" class="nav-link">ショートカット</a>
+      </nav>
+      <div class="modal-content" id="helpContent">
+
+        <section id="sec-intro" class="help-sec">
+          <h3>このツールについて</h3>
+          <p>原稿や文章の表記揺れを一括で整える、DTP・編集者向けの文字組整形ツールです。約物の全角化、数字の桁数による全角/半角統一、株式会社表記の展開・略記など、組版前の下ごしらえに必要な処理をワンクリックで行えます。</p>
+
+          <h4>主な特長</h4>
+          <ul class="help-list">
+            <li><strong>完全ローカル動作</strong>：入力したテキストは外部に送信されません。機密原稿でも安心です。</li>
+            <li><strong>Unicode 形式で出力</strong>：Mac/Windows どちらの環境でも文字化けしません。</li>
+            <li><strong>用途別プリセット</strong>：横組み/縦組みなど、媒体に合わせた標準設定を用意。</li>
+            <li><strong>検索置換機能</strong>：変換後に固有名詞の表記揺れも一括修正可能。</li>
+            <li><strong>縦組みプレビュー</strong>：出力結果を縦書き表示して組版時の雰囲気を確認できます。</li>
+            <li><strong>プレビュー機能</strong>：置換結果を確認してから確定できるので事故防止に。</li>
+            <li><strong>環境依存文字の検出</strong>：①、㈱、㊤などの機種依存文字を自動でアラート。</li>
+          </ul>
+
+          <h4>こんな場面で</h4>
+          <ul class="help-list">
+            <li>Web から取得した原稿の表記を紙媒体用に整える</li>
+            <li>クライアントから受け取った原稿の表記を統一する</li>
+            <li>InDesign 流し込み前の下ごしらえ</li>
+            <li>校正前の表記揺れチェック</li>
+          </ul>
+        </section>
+
+        <section id="sec-quick" class="help-sec">
+          <h3>基本の使い方</h3>
+          <ol class="help-steps">
+            <li>
+              <strong>プリセットを選ぶ</strong>
+              <p>画面右上の「プリセット」から、媒体に合った設定を選びます。迷ったら「横組み」が一般的な紙媒体向けの初期設定です。</p>
+            </li>
+            <li>
+              <strong>テキストを貼り付ける</strong>
+              <p>左側の「入力」欄にテキストをペースト。リアルタイム変換がオンの場合、右側の「出力」欄に即座に変換結果が表示されます。</p>
+            </li>
+            <li>
+              <strong>オプションを調整(任意)</strong>
+              <p>右側のサイドバーから、個別のオプションをチェック/オフして微調整できます。プリセットをベースに、必要な箇所だけ変更する使い方がおすすめです。</p>
+            </li>
+            <li>
+              <strong>必要に応じて検索置換</strong>
+              <p>固有名詞の表記揺れなど、ルールベースでは拾えない箇所は「🔍 検索置換」で修正します。Ctrl+F(Mac: Cmd+F)でも開閉できます。</p>
+            </li>
+            <li>
+              <strong>コピーして使う</strong>
+              <p>「コピー」ボタンで結果をクリップボードへ。そのまま InDesign や Word などに貼り付けて使えます。</p>
+            </li>
+          </ol>
+
+          <div class="help-tip">
+            <strong>💡 Tip:</strong> サンプルボタンを押すと、各オプションの動作確認用テキストが入力欄に挿入されます。動作を試したいときに便利です。
+          </div>
+        </section>
+
+        <section id="sec-options" class="help-sec">
+          <h3>オプション詳細</h3>
+
+          <h4>全角/半角変換</h4>
+          <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">約物(やくもの:句読点・括弧・疑問符などの記号類)を半角から全角へ変換します。</p>
+          <dl class="help-dl">
+            <dt>括弧類を全角化</dt>
+            <dd><code>( ) [ ] { }</code> を <code>（ ） ［ ］ ｛ ｝</code> に変換します。半角括弧は欧文用なので、和文中では基本的に全角を使用します。</dd>
+            <dt>?! を全角化</dt>
+            <dd>半角の <code>? !</code> を全角の <code>？ ！</code> に変換します。和文と並ぶ場合は全角が組版上の原則です。</dd>
+            <dt>:; を全角化</dt>
+            <dd>半角の <code>: ;</code> を全角の <code>： ；</code> に変換します。文中の意味区切りとして使う場合は全角が適切。詰めはメトリクスやオプティカルで調整します。</dd>
+            <dt>連続する約物のスペースを詰める</dt>
+            <dd>「！ ！」「、 。」のように約物の間に紛れ込んだスペース(半角/全角)を削除して「！！」「、。」に整えます。コピペで紛れ込む余計なスペースの掃除用。</dd>
+          </dl>
+
+          <h4>会社表記</h4>
+          <dl class="help-dl">
+            <dt>(株)(有)(社) → 株式会社・有限会社・社団法人</dt>
+            <dd>略記から正式名称への展開。<code>(株)</code> <code>㈱</code> どちらの形式も検出します。新聞・公式文書向け。</dd>
+            <dt>株式会社・有限会社 → ㈱㈲㈳</dt>
+            <dd>正式名称から略記への変換。文字数を節約したい場合や、デザイン上の都合で使用。<strong>※㈱は環境依存文字なので、納品先の表示環境にご注意ください。</strong></dd>
+          </dl>
+
+          <h4>数字</h4>
+          <dl class="help-dl">
+            <dt>すべて半角に統一</dt>
+            <dd>すべての数字を半角に。Web/横組み向け。</dd>
+            <dt>すべて全角に統一</dt>
+            <dd>すべての数字を全角に。縦組み小説などで使用。</dd>
+            <dt>1桁全角 / 2桁以上半角(DTP定番)</dt>
+            <dd>縦組みのDTP組版で広く使われるルール。「3年生」「100名」のように1桁は全角、2桁以上は半角にすることで縦中横を回避しつつ可読性を保ちます。</dd>
+            <dt>漢数字に変換(位取り型)</dt>
+            <dd>算用数字を数学的な漢数字表記に変換します。<code>32 → 三十二</code>、<code>2026 → 二千二十六</code>、<code>10000 → 一万</code>。縦組み小説で文中の数量・年号を漢数字にする場合に使用。</dd>
+            <dt>漢数字に変換(数字並べ型)</dt>
+            <dd>算用数字を1文字ずつ漢数字に置き換えます。<code>32 → 三二</code>、<code>2026 → 二〇二六</code>。日付や番号・コード表記、伝統的な番地表記などで使用。</dd>
+            <dt>電話番号・郵便番号・日付などは漢数字変換しない</dt>
+            <dd>漢数字変換時の安全装置。電話番号(<code>03-1234-5678</code>)、郵便番号(<code>〒100-0001</code>)、日付(<code>2026/05/22</code>)、時刻(<code>12:34</code>)、価格のカンマ区切り(<code>1,234</code>)、URL・メールアドレスは漢数字変換から除外します。「2026<strong>年</strong>5<strong>月</strong>」のような単純な数字は変換されます。</dd>
+          </dl>
+
+          <h4>英字</h4>
+          <dl class="help-dl">
+            <dt>すべて半角/全角に統一</dt>
+            <dd>原稿内のアルファベットを統一します。和文中の単独アルファベット(A4サイズなど)を全角にしたい場合は「全角」を選択。</dd>
+          </dl>
+
+          <h4>表記統一</h4>
+          <p style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">同じ意味で複数の表記が混在する記号を、いずれかに統一します。</p>
+          <dl class="help-dl">
+            <dt>波ダッシュの統一</dt>
+            <dd>見た目は同じ「〜」でも、Unicode上では <code>〜 U+301C</code>(出版標準)と <code>~ U+FF5E</code>(Web標準)の2種類があります。混在を防ぐためにどちらかに統一します。紙媒体は <strong>U+301C</strong> が原則。</dd>
+            <dt>各種ハイフン・ダーシを統一</dt>
+            <dd><code>- ‐ ‑ – —</code> など似た記号をすべて長音「ー」に統一します。日本語文中での表記揺れ防止に。</dd>
+            <dt>三点リーダーの統一</dt>
+            <dd><code>... U+2026 標準三点リーダー(…)</code> はベースライン上、<code>U+22EF 中心三点リーダー(⋯)</code> は字面の中心位置にあります。日本語組版では中心三点リーダーが正しいとされ、DTPでは <code>⋯</code> を推奨。</dd>
+            <dt>三点リーダーを2つ重ねる</dt>
+            <dd>「…」を「……」のように2つ重ねます。日本語組版の伝統的なルールで、特に縦組み小説で多用されます。</dd>
+            <dt>引用符を統一(ダブルクォーテーション)</dt>
+            <dd>直線的なストレートクォート <code>" "</code> <code>' '</code> を、組版に適した曲線的なダブルクォーテーション(カーリークオート) <code>" "</code> <code>' '</code> に変換します。開き・閉じが自動で交互に切り替わります。</dd>
+            <dt>引用符を統一(ダブルミニュート)</dt>
+            <dd>ダブルクォーテーションを縦組み小説向けの<strong>ダブルミニュート(チョンチョン)</strong> <code>〝 〟</code> に変換します。会話文の引用やセリフ強調などに使われる伝統的な表記。起こし(〝 U+301D)と受け(〟 U+301F)が自動で交互に切り替わります。</dd>
+          </dl>
+
+          <h4>スペース</h4>
+          <dl class="help-dl">
+            <dt>全角→半角 / 半角→全角</dt>
+            <dd>スペースの種類を一括変換します。</dd>
+            <dt>連続するスペースを1つに</dt>
+            <dd>誤って入った連続スペースを1つにまとめます。コピペで発生しがちな冗長スペースの掃除用。</dd>
+            <dt>和欧間に半角スペース挿入</dt>
+            <dd>和文と英数字の間に半角スペースを挿入(Web記事向け)。InDesignを使う場合は「和欧文間隔」機能で制御するため、通常はオフ推奨。</dd>
+            <dt>行頭・行末の余分な空白を除去</dt>
+            <dd>各行の頭と末尾の不要なスペース・タブを削除します。</dd>
+          </dl>
+
+          <h4>その他</h4>
+          <dl class="help-dl">
+            <dt>環境依存文字を検出して警告</dt>
+            <dd>①②③、㈱、㊤、㎜、Ⅰなどの機種依存文字を検出して出力欄下に警告表示。納品先の環境で文字化けする可能性があるためチェックに役立ちます。</dd>
+            <dt>改行コードを統一</dt>
+            <dd>Mac(CR)、Windows(CRLF)、Unix(LF)の改行コードを LF に統一。InDesign 流し込み時のトラブル防止に。</dd>
+            <dt>連続する空行を1行に</dt>
+            <dd>2行以上の空行を1行にまとめます。Web原稿の整形に。</dd>
+          </dl>
+        </section>
+
+        <section id="sec-preset" class="help-sec">
+          <h3>プリセットの使い方</h3>
+
+          <h4>標準プリセット</h4>
+          <dl class="help-dl">
+            <dt>横組み</dt>
+            <dd>一般的な紙媒体・チラシ・パンフレット向け。約物全角、数字半角、英字半角、波ダッシュは出版標準、和欧間スペースなし。</dd>
+            <dt>縦組み</dt>
+            <dd>小説・縦組み書籍向け。数字は「1桁全角/2桁以上半角」のDTP定番ルール、英字はそのまま、三点リーダーは中心三点を2つ重ね「⋯⋯」。</dd>
+            <dt>すべて全角に寄せる</dt>
+            <dd>原稿のすべての記号・数字・英字を全角に統一。古典的な組版向け。</dd>
+            <dt>すべて半角に寄せる</dt>
+            <dd>すべて半角に統一。プレーンテキスト化や、後工程で詳細制御する場合のベース作り。</dd>
+          </dl>
+
+          <h4>ユーザープリセットの保存</h4>
+          <ol class="help-steps">
+            <li>オプションを好みに調整します</li>
+            <li>「保存」ボタンをクリック</li>
+            <li>プリセット名を入力(例:「自社雑誌○月号用」)</li>
+            <li>次回からプリセット一覧に表示されます</li>
+          </ol>
+
+          <h4>プリセットはどこに保存される?</h4>
+          <p>保存したプリセットは<strong>お使いのブラウザ内</strong>(ローカルストレージ)に保存されます。サーバーには送信されず、外部にデータが出ることはありません。</p>
+
+          <div class="help-tip">
+            <strong>🔒 プライバシーについて:</strong> このツールは完全ローカル動作です。プリセットの内容も、変換中のテキストも、外部に一切送信されません。機密情報を扱う案件でも安心してお使いいただけます。
+          </div>
+
+          <h4>他の人と共有される?</h4>
+          <p><strong>共有されません。</strong> 各ユーザーが自分のブラウザにのみ保存するため、以下のことを覚えておいてください:</p>
+          <ul class="help-list">
+            <li>Aさんが作ったプリセットは、Bさんには見えません</li>
+            <li>同じ自分でも、別のパソコン(自宅PC/会社PC)では見えません</li>
+            <li>同じパソコンでも、別のブラウザ(Chrome/Safari/Edge)では見えません</li>
+            <li>シークレットモード(プライベートブラウズ)で作ったプリセットは、ウィンドウを閉じると消えます</li>
+          </ul>
+
+          <h4>プリセットを共有・引き継ぐ方法</h4>
+          <p>「書出」ボタンでプリセットを<strong>JSONファイル</strong>として書き出せます。このファイルをSlackやメールで送り、相手が「読込」ボタンで取り込めば同じ設定を再現できます。</p>
+
+          <ol class="help-steps">
+            <li><strong>渡す側:</strong>「書出」ボタンをクリック → <code>mojikumi_presets.json</code> がダウンロードされる</li>
+            <li>そのファイルをSlack・メール・USB等で相手に渡す</li>
+            <li><strong>受け取る側:</strong>「読込」ボタンをクリック → ファイルを選択 → プリセット一覧に追加される</li>
+          </ol>
+
+          <div class="help-tip">
+            <strong>💡 こんな使い方も:</strong>
+            <ul class="help-list" style="margin-top:6px;">
+              <li>自宅PCで作ったプリセットを会社PCに引き継ぐ(書出 → メール送信 → 自分で読込)</li>
+              <li>クライアントごとの表記ルールをファイルで管理(「クライアントA用.json」「クライアントB用.json」など)</li>
+              <li>チーム標準プリセットを誰かが作って共有(社内Wikiなどに置いておく)</li>
+              <li>ブラウザのキャッシュクリアで消えるリスクに備えてバックアップ</li>
+            </ul>
+          </div>
+
+          <h4>消えてしまう可能性のあるケース</h4>
+          <p>以下の操作でプリセットが消えるので、重要なものは「書出」でバックアップを取ることをおすすめします:</p>
+          <ul class="help-list">
+            <li>ブラウザの「閲覧履歴・キャッシュの削除」を実行した時</li>
+            <li>ブラウザの「サイトデータをクリア」操作をした時</li>
+            <li>プライベートブラウズ(シークレットモード)を閉じた時</li>
+            <li>ブラウザの再インストール時</li>
+            <li>新しいパソコンに買い替えた時</li>
+          </ul>
+
+          <h4>プリセットの削除</h4>
+          <p>不要になったプリセットは、プリセット一覧から選択して「削除」ボタンで消せます。<strong>標準プリセット(横組み・縦組みなど)は削除できません。</strong></p>
+        </section>
+
+        <section id="sec-find" class="help-sec">
+          <h3>検索置換の使い方</h3>
+
+          <h4>開き方</h4>
+          <p>出力欄の上の「🔍 検索置換」ボタン、または <kbd>Ctrl</kbd>+<kbd>F</kbd>(Mac: <kbd>Cmd</kbd>+<kbd>F</kbd>)で開閉できます。</p>
+
+          <h4>基本操作</h4>
+          <ol class="help-steps">
+            <li>検索ボックスに探したい文字を入力 → 該当箇所が出力欄でハイライトされ、件数が表示されます</li>
+            <li>「‹」「›」ボタン、または検索ボックス上で <kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd> で次/前へ移動</li>
+            <li>置換ボックスに置換後の文字を入力</li>
+            <li>「プレビュー」or「1件置換」or「すべて置換」をクリック</li>
+          </ol>
+
+          <h4>プレビュー機能(重要)</h4>
+          <p>置換ボタンを押しても<strong>すぐには確定しません</strong>。出力欄が黄色背景になり「プレビュー表示中」のバナーが出ます。この状態では:</p>
+          <ul class="help-list">
+            <li><strong>プレビューボタンを再度クリック</strong>:置換前/置換後を何度でも切り替えて見比べ可能</li>
+            <li><strong>「この内容で確定」</strong>:置換を本採用</li>
+            <li><strong>「元に戻す」</strong>:置換をキャンセル</li>
+          </ul>
+
+          <h4>オプション</h4>
+          <dl class="help-dl">
+            <dt>大文字小文字を区別</dt>
+            <dd>オフ時は <code>abc</code> で <code>ABC</code> も検出します。</dd>
+            <dt>正規表現</dt>
+            <dd>JavaScript互換の正規表現が使えます。例:<code>\d{4}</code> で4桁の数字を検出、<code>(株式会社|有限会社)</code> で複数候補に一致。</dd>
+          </dl>
+
+          <div class="help-tip">
+            <strong>💡 使用例:</strong>「サンプル」を「サンプル株式会社」に一括置換、誤字「制作」を「製作」に修正、特定の商品名の表記揺れ修正など。
+          </div>
+        </section>
+
+        <section id="sec-tategumi" class="help-sec">
+          <h3>縦組みプレビュー</h3>
+          <p>出力テキストを縦書きで表示して、組版時のおおよその見え方を確認できる機能です。出力欄上部の「📜 縦組み」ボタンで切り替えます。</p>
+
+          <h4>使い方</h4>
+          <ol class="help-steps">
+            <li>テキストを変換して出力欄に結果を出します</li>
+            <li>「📜 縦組み」ボタンをクリック → 出力欄が縦書き表示に切り替わります</li>
+            <li>もう一度クリックで通常表示(横書き)に戻ります</li>
+          </ol>
+
+          <h4>確認できること</h4>
+          <ul class="help-list">
+            <li>数字の「1桁全角/2桁以上半角」処理の見え方</li>
+            <li>三点リーダーの位置(標準三点/中心三点)の違い</li>
+            <li>波ダッシュの縦書き表示</li>
+            <li>ダブルミニュート(〝〟)の見え方</li>
+            <li>全体の改行・空行のバランス</li>
+          </ul>
+
+          <div class="help-tip">
+            <strong>⚠ 注意:</strong> ブラウザによる簡易的な縦書き表示のため、実際のInDesignや組版ソフトでの見え方とは細部が異なります(約物の位置・縦中横の処理など)。あくまで<strong>雰囲気の確認用</strong>とお考えください。最終的な組版確認は実際のソフトで行ってください。
+          </div>
+
+          <div class="help-tip">
+            <strong>💡 Tip:</strong> 縦組みプレビュー中は読み取り専用です。テキストの編集は通常表示(横書き)に戻してから行ってください。
+          </div>
+        </section>
+
+        <section id="sec-glossary" class="help-sec">
+          <h3>用語集</h3>
+          <dl class="help-dl">
+            <dt>約物(やくもの)</dt>
+            <dd>句読点、括弧、疑問符など、文字以外の記号類の総称。組版では和文用(全角)と欧文用(半角)で使い分けるのが原則。</dd>
+            <dt>全角・半角</dt>
+            <dd>文字幅のこと。全角は正方形、半角はその半分の幅。同じ「A」でも <code>A(半角)</code> と <code>Ａ(全角)</code> は別の Unicode 文字。</dd>
+            <dt>三点リーダー</dt>
+            <dd>「…」のこと。日本語組版では2つ重ねて「……」と使うのが伝統的。標準三点リーダー(U+2026)はベースライン寄り、中心三点リーダー(U+22EF)は字面中心にあり、組版的には後者が正しい。</dd>
+            <dt>波ダッシュ</dt>
+            <dd>「〜」のこと。<code>U+301C(波ダッシュ)</code> は出版・DTP標準、<code>U+FF5E(全角チルダ)</code> は Web・スマホで多用される。歴史的経緯で2つ存在する。</dd>
+            <dt>ダーシ・ハイフン類</dt>
+            <dd>「-」「‐」「–」「—」「ー」など似た記号の総称。それぞれ用途が異なるが、混在を防ぐため日本語組版では長音「ー」に統一することが多い。</dd>
+            <dt>環境依存文字(機種依存文字)</dt>
+            <dd>特定のOS・フォントでしか正しく表示できない文字。①②③、㈱、㊤、Ⅰ、㎏など。Unicode化で多くは扱えるようになったが、納品先の環境次第で文字化けするリスクがある。</dd>
+            <dt>ダブルクォーテーション(カーリークオート)</dt>
+            <dd>引用符の「" "」「' '」は直線型(ストレートクォート)。これを開きと閉じで形状が異なる「" "」「' '」にしたものがダブルクォーテーション(英文組版では「カーリークオート」と呼びます)。組版的にはこちらが正式。</dd>
+            <dt>ダブルミニュート(チョンチョン)</dt>
+            <dd>「〝〟」のこと。縦組み小説や伝統的な日本語組版で、会話文の引用やセリフを強調するために使われます。起こし「〝」(U+301D)と受け「〟」(U+301F)のペアで用います。</dd>
+            <dt>和欧間スペース</dt>
+            <dd>和文と欧文(英数字)の間に挿入する四分(しぶん)ほどのスペース。InDesignでは「和欧文間隔」機能で自動制御するため、Web原稿以外では基本オフ。</dd>
+            <dt>縦中横(たてちゅうよこ)</dt>
+            <dd>縦組み中で、2〜3桁の数字や英字だけ横に倒して並べる組版技法。「1桁全角/2桁以上半角」ルールはこの縦中横を回避する目的でも使われる。</dd>
+            <dt>Unicode</dt>
+            <dd>世界中の文字を統一的に扱う文字コード体系。Mac/Windows問わず同じ文字は同じコードで表現されるため、本ツールはUnicode形式で出力しています。</dd>
+          </dl>
+        </section>
+
+        <section id="sec-faq" class="help-sec">
+          <h3>FAQ・トラブルシュート</h3>
+
+          <dl class="help-dl">
+            <dt>Q. 入力したテキストはどこかに送信されますか?</dt>
+            <dd>A. いいえ、一切送信されません。すべての処理はお使いのブラウザ内で完結します。機密原稿でも安心してご使用ください。</dd>
+
+            <dt>Q. 別のパソコンでも同じプリセットを使いたい</dt>
+            <dd>A. プリセットはブラウザ内に保存されるため、別端末では見えません。「書出」ボタンでJSONを書き出し、別端末で「読込」してください。</dd>
+
+            <dt>Q. 変換後に手作業で修正したい</dt>
+            <dd>A. 出力欄も直接編集可能です。クリックしてカーソルを置けば修正できます。ただし、再度「変換実行」を押すと入力欄から再計算されて上書きされます。</dd>
+
+            <dt>Q. 「、」が勝手に変換されない</dt>
+            <dd>A. 本ツールでは句読点(カンマ・ピリオド)の全角化機能は意図的に外しています。すでに「、」「。」で入力された原稿の数字内カンマ(1,000円)などが誤変換される事故を防ぐためです。</dd>
+
+            <dt>Q. 縦組みプリセットで英字が変換されない</dt>
+            <dd>A. 縦組みプリセットでは英字を「変換しない」に設定しています。固有名詞の英字をそのまま残すケースが多いためです。必要に応じて手動で切り替えてください。</dd>
+
+            <dt>Q. 環境依存文字の警告が出た</dt>
+            <dd>A. ①②③や㈱などが含まれています。Web表示や最近のソフトでは問題なく表示されますが、古いシステムや特定の印刷環境で文字化けする可能性があります。必要に応じて「(1)」「株式会社」などに置換してください(検索置換機能が便利です)。</dd>
+
+            <dt>Q. プレビュー中に変換実行を押してしまった</dt>
+            <dd>A. プレビューは自動的に保持され、再変換結果はバックグラウンドで更新されます。プレビューを「元に戻す」とすると、再変換後のテキストが表示されます。</dd>
+
+            <dt>Q. 検索置換で正規表現が動かない</dt>
+            <dd>A. 「正規表現」のチェックを入れてください。JavaScript互換の正規表現が使えます。例:<code>\d+</code>(連続する数字)、<code>[ぁ-ん]+</code>(ひらがなのみ)。</dd>
+
+            <dt>Q. リアルタイム変換が重い</dt>
+            <dd>A. 非常に長い原稿の場合は「リアルタイム変換」をオフにして、編集が終わってから「変換実行」ボタンを押す運用がおすすめです。</dd>
+
+            <dt>Q. クリアしたあと元に戻したい</dt>
+            <dd>A. ブラウザの「戻る」操作では戻りません。重要な原稿はあらかじめ別の場所に保存しておいてください。</dd>
+
+            <dt>Q. 漢数字変換で電話番号も「〇三-千二百三十四…」になってしまう</dt>
+            <dd>A. 数字オプションの中の「電話番号・郵便番号・日付などは漢数字変換しない」のチェックを入れてください(デフォルトでオン)。電話番号・郵便番号・日付・時刻・URL・メールアドレス・カンマ区切り数字を保護できます。</dd>
+
+            <dt>Q. 漢数字の「位取り型」と「数字並べ型」の使い分けは?</dt>
+            <dd>A. <strong>位取り型</strong>(三十二、二千二十六)は文中の数量・年齢・年号など、数として意味を持つ場合に使います。<strong>数字並べ型</strong>(三二、二〇二六)は日付・番地・通し番号など、桁を1つずつ並べて表記したい場合に使います。縦組み小説では年号を「二〇二六年」と書くのが一般的です。</dd>
+
+            <dt>Q. 1万、1億などはどう表記される?</dt>
+            <dd>A. 位取り型では「一万」「一億」と「一」を付ける形になります(「十」「百」「千」では「一」を省略するのが日本語の伝統)。気になる場合は手動で修正してください。</dd>
+          </dl>
+        </section>
+
+        <section id="sec-shortcut" class="help-sec">
+          <h3>キーボードショートカット</h3>
+          <table class="help-table">
+            <thead>
+              <tr><th>機能</th><th>Windows</th><th>Mac</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>検索置換バーの開閉</td><td><kbd>Ctrl</kbd>+<kbd>F</kbd></td><td><kbd>Cmd</kbd>+<kbd>F</kbd></td></tr>
+              <tr><td>次の検索結果へ</td><td colspan="2"><kbd>Enter</kbd>(検索欄で)</td></tr>
+              <tr><td>前の検索結果へ</td><td colspan="2"><kbd>Shift</kbd>+<kbd>Enter</kbd>(検索欄で)</td></tr>
+              <tr><td>検索置換を閉じる</td><td colspan="2"><kbd>Esc</kbd></td></tr>
+              <tr><td>マニュアルを閉じる</td><td colspan="2"><kbd>Esc</kbd></td></tr>
+              <tr><td>コピー(出力欄選択時)</td><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td><kbd>Cmd</kbd>+<kbd>C</kbd></td></tr>
+              <tr><td>すべて選択(入出力欄で)</td><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td><kbd>Cmd</kbd>+<kbd>A</kbd></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<input type="file" id="importFile" accept=".json" style="display:none">
+
+<script>
+/* =========================================================
+   オプション定義
+   ========================================================= */
+const OPTION_GROUPS = [
+  {
+    id:'punctuation', ja:'全角/半角変換',
+    items:[
+      {id:'punct_bracket', label:'括弧類を全角化  () [] → （）［］', type:'check', default:true},
+      {id:'punct_qmark', label:'? ! を全角化  → ？！', type:'check', default:true},
+      {id:'punct_colon', label:': ; を全角化  → ：；', type:'check', default:true},
+      {id:'punct_dedup', label:'連続する約物のスペースを詰める  例：「！ ！」→「！！」、「、 。」→「、。」', type:'check', default:false}
+    ]
+  },
+  {
+    id:'company', ja:'会社表記',
+    items:[
+      {id:'company_mode', type:'radio', default:'keep', options:[
+        {value:'keep', label:'変換しない'},
+        {value:'expand', label:'(株)(有)(社) → 株式会社・有限会社・社団法人'},
+        {value:'abbrev', label:'株式会社・有限会社・社団法人 → ㈱㈲㈳'}
+      ]}
+    ]
+  },
+  {
+    id:'numbers', ja:'数字',
+    items:[
+      {id:'num_mode', type:'radio', default:'dtp', options:[
+        {value:'keep', label:'変換しない'},
+        {value:'half', label:'すべて半角に統一'},
+        {value:'full', label:'すべて全角に統一'},
+        {value:'dtp', label:'1桁全角 / 2桁以上半角(DTP定番)'},
+        {value:'kanji_positional', label:'漢数字に変換(位取り型)  例:32 → 三十二、2026 → 二千二十六'},
+        {value:'kanji_simple', label:'漢数字に変換(数字並べ型)  例:32 → 三二、2026 → 二〇二六'}
+      ]},
+      {id:'kanji_skip_special', label:'電話番号・郵便番号・日付などは漢数字変換しない', type:'check', default:true}
+    ]
+  },
+  {
+    id:'alphabet', ja:'英字',
+    items:[
+      {id:'alpha_mode', type:'radio', default:'half', options:[
+        {value:'keep', label:'変換しない'},
+        {value:'half', label:'すべて半角に統一'},
+        {value:'full', label:'すべて全角に統一'}
+      ]}
+    ]
+  },
+  {
+    id:'symbols', ja:'表記統一',
+    items:[
+      {id:'wave_mode', type:'radio', default:'jis', options:[
+        {value:'keep', label:'波ダッシュ:変換しない'},
+        {value:'jis', label:'波ダッシュ:〜 U+301C(出版標準)に統一'},
+        {value:'fw', label:'波ダッシュ:~ U+FF5E(Web標準)に統一'}
+      ]},
+      {id:'dash_unify', label:'各種ハイフン・ダーシを統一  - ‐ ‑ – —', type:'check', default:false},
+      {id:'ellipsis_mode', type:'radio', default:'midline', options:[
+        {value:'keep', label:'三点リーダー:変換しない'},
+        {value:'standard', label:'... → …  (U+2026 標準三点リーダー)'},
+        {value:'midline', label:'... → ⋯  (U+22EF 中心三点リーダー)'}
+      ]},
+      {id:'ellipsis_double', label:'三点リーダーを2つ重ねる「……」または「⋯⋯」', type:'check', default:false},
+      {id:'quote_mode', type:'radio', default:'keep', options:[
+        {value:'keep', label:'引用符:変換しない'},
+        {value:'curly', label:'引用符をダブルクォーテーション " " \' \' に統一'},
+        {value:'minute', label:'引用符をダブルミニュート 〝 〟 に統一(縦組み小説向け)'}
+      ]}
+    ]
+  },
+  {
+    id:'spaces', ja:'スペース',
+    items:[
+      {id:'space_mode', type:'radio', default:'keep', options:[
+        {value:'keep', label:'変換しない'},
+        {value:'full2half', label:'全角→半角'},
+        {value:'half2full', label:'半角→全角'}
+      ]},
+      {id:'space_squeeze', label:'連続するスペースを1つに', type:'check', default:false},
+      {id:'space_aeqj', label:'和欧間に半角スペース挿入', type:'check', default:false},
+      {id:'space_trim', label:'行頭・行末の余分な空白を除去', type:'check', default:false}
+    ]
+  },
+  {
+    id:'misc', ja:'その他',
+    items:[
+      {id:'env_detect', label:'環境依存文字を検出して警告', type:'check', default:true},
+      {id:'newline_unify', label:'改行コードを統一', type:'check', default:true},
+      {id:'blank_line', label:'連続する空行を1行に', type:'check', default:false}
+    ]
+  }
+];
+
+/* =========================================================
+   プリセット
+   ========================================================= */
+const BUILT_IN_PRESETS = {
+  'web_horizontal':{
+    name:'横組み',
+    builtin:true,
+    settings:{
+      punct_bracket:true, punct_qmark:true, punct_colon:true, punct_dedup:false,
+      company_mode:'expand',
+      num_mode:'half', kanji_skip_special:true, alpha_mode:'half',
+      wave_mode:'jis', dash_unify:false, ellipsis_mode:'midline', ellipsis_double:false, quote_mode:'keep',
+      space_mode:'keep', space_squeeze:true, space_aeqj:false, space_trim:true,
+      env_detect:true, newline_unify:true, blank_line:false
+    }
+  },
+  'dtp_vertical': {
+    name:'縦組み',
+    builtin:true,
+    settings:{
+      punct_bracket:true, punct_qmark:true, punct_colon:true, punct_dedup:false,
+      company_mode:'expand',
+      num_mode:'dtp', kanji_skip_special:true, alpha_mode:'keep',
+      wave_mode:'jis', dash_unify:false, ellipsis_mode:'midline', ellipsis_double:true, quote_mode:'keep',
+      space_mode:'keep', space_squeeze:false, space_aeqj:false, space_trim:false,
+      env_detect:true, newline_unify:true, blank_line:false
+    }
+  },
+  'full_unify':{
+    name:'すべて全角に寄せる',
+    builtin:true,
+    settings:{
+      punct_bracket:true, punct_qmark:true, punct_colon:true, punct_dedup:false,
+      company_mode:'keep',
+      num_mode:'full', kanji_skip_special:true, alpha_mode:'full',
+      wave_mode:'jis', dash_unify:false, ellipsis_mode:'midline', ellipsis_double:false, quote_mode:'curly',
+      space_mode:'half2full', space_squeeze:false, space_aeqj:false, space_trim:false,
+      env_detect:true, newline_unify:true, blank_line:false
+    }
+  },
+  'half_unify':{
+    name:'すべて半角に寄せる',
+    builtin:true,
+    settings:{
+      punct_bracket:false, punct_qmark:false, punct_colon:false, punct_dedup:false,
+      company_mode:'keep',
+      num_mode:'half', kanji_skip_special:true, alpha_mode:'half',
+      wave_mode:'fw', dash_unify:true, ellipsis_mode:'keep', ellipsis_double:false, quote_mode:'keep',
+      space_mode:'full2half', space_squeeze:true, space_aeqj:false, space_trim:true,
+      env_detect:true, newline_unify:true, blank_line:false
+    }
+  }
+};
+
+/* =========================================================
+   変換ロジック
+   ========================================================= */
+function toFullDigit(s){return s.replace(/[0-9]/g, c => String.fromCharCode(c.charCodeAt(0)+0xFEE0))}
+function toHalfDigit(s){return s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0))}
+function toFullAlpha(s){return s.replace(/[A-Za-z]/g, c => String.fromCharCode(c.charCodeAt(0)+0xFEE0))}
+function toHalfAlpha(s){return s.replace(/[Ａ-Ｚａ-ｚ]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0))}
+
+/* 漢数字変換 */
+const KANJI_DIGITS = ['〇','一','二','三','四','五','六','七','八','九'];
+
+// 数字並べ型: 2026 → 二〇二六
+function toKanjiSimple(numStr){
+  return numStr.split('').map(d => KANJI_DIGITS[parseInt(d, 10)] || d).join('');
+}
+
+// 位取り型: 32 → 三十二、2026 → 二千二十六
+// 対応範囲: 0〜9999兆くらい(JavaScript整数精度内)
+function toKanjiPositional(numStr){
+  // 先頭の0は数字並べ型に
+  if(/^0/.test(numStr) && numStr.length > 1) return toKanjiSimple(numStr);
+  const n = parseInt(numStr, 10);
+  if(isNaN(n)) return numStr;
+  if(n === 0) return '〇';
+  if(n < 0) return numStr;
+
+  const SMALL_UNITS = ['', '十', '百', '千'];
+  const BIG_UNITS = ['', '万', '億', '兆', '京'];
+
+  // 4桁ずつ区切って処理
+  function fourDigits(num){
+    if(num === 0) return '';
+    let result = '';
+    const digits = String(num).padStart(4, '0').split('').map(Number);
+    for(let i = 0; i < 4; i++){
+      const d = digits[i];
+      const unitIdx = 3 - i;
+      if(d === 0) continue;
+      if(d === 1 && unitIdx > 0){
+        // 1の位以外で1の場合は「一」を省略(十、百、千)
+        result += SMALL_UNITS[unitIdx];
+      } else {
+        result += KANJI_DIGITS[d] + SMALL_UNITS[unitIdx];
+      }
+    }
+    return result;
+  }
+
+  let result = '';
+  let num = n;
+  const groups = [];
+  while(num > 0){
+    groups.push(num % 10000);
+    num = Math.floor(num / 10000);
+  }
+  for(let i = groups.length - 1; i >= 0; i--){
+    const g = groups[i];
+    if(g === 0) continue;
+    result += fourDigits(g) + BIG_UNITS[i];
+  }
+  return result;
+}
+
+// 漢数字変換のメイン処理(特殊フォーマット除外オプションあり)
+function convertToKanji(text, mode, skipSpecial){
+  // 一旦半角に揃える
+  let work = text.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+
+  if(skipSpecial){
+    // 特殊フォーマットをプレースホルダーで保護
+    // - 電話番号: 03-1234-5678, 090-1234-5678 など
+    // - 郵便番号: 〒100-0001, 100-0001
+    // - 日付: 2026/05/22, 2026-05-22, 2026.05.22
+    // - 時刻: 12:34
+    // - URL内の数字: http://...
+    // - メールアドレス: @example.com
+    // - 価格のカンマ区切り数字も自然な変換のため一旦保護: 1,234,567
+    const protectedRanges = [];
+    const patterns = [
+      /https?:\/\/[^\s]+/g,                              // URL
+      /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, // メール
+      /〒\s*\d{3}-?\d{4}/g,                              // 郵便番号(〒付き)
+      /\d{2,4}-\d{2,4}-\d{3,4}/g,                        // 電話番号
+      /\d{4}[\/\-\.]\d{1,2}[\/\-\.]\d{1,2}/g,            // 日付
+      /\d{1,2}:\d{2}(?::\d{2})?/g,                       // 時刻
+      /\d{1,3}(?:,\d{3})+/g                              // カンマ区切り数字
+    ];
+    for(const re of patterns){
+      let m;
+      while((m = re.exec(work)) !== null){
+        protectedRanges.push({start: m.index, end: m.index + m[0].length, text: m[0]});
+      }
+    }
+    // 範囲が重複している場合は統合
+    protectedRanges.sort((a,b) => a.start - b.start);
+    const merged = [];
+    for(const r of protectedRanges){
+      if(merged.length && r.start < merged[merged.length-1].end){
+        merged[merged.length-1].end = Math.max(merged[merged.length-1].end, r.end);
+      } else {
+        merged.push({start: r.start, end: r.end});
+      }
+    }
+    // 保護範囲を考慮しながら数字を変換
+    let result = '';
+    let cursor = 0;
+    for(const range of merged){
+      // 保護範囲の前を変換
+      const before = work.substring(cursor, range.start);
+      result += before.replace(/\d+/g, m => mode === 'positional' ? toKanjiPositional(m) : toKanjiSimple(m));
+      // 保護範囲はそのまま
+      result += work.substring(range.start, range.end);
+      cursor = range.end;
+    }
+    // 最後の部分
+    const remaining = work.substring(cursor);
+    result += remaining.replace(/\d+/g, m => mode === 'positional' ? toKanjiPositional(m) : toKanjiSimple(m));
+    return result;
+  } else {
+    return work.replace(/\d+/g, m => mode === 'positional' ? toKanjiPositional(m) : toKanjiSimple(m));
+  }
+}
+
+function convert(text, s){
+  let out = text;
+
+  // 改行統一（最初に）
+  if(s.newline_unify){
+    out = out.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  }
+
+  // 約物
+  if(s.punct_bracket){
+    out = out
+      .replace(/\(/g,'\uFF08').replace(/\)/g,'\uFF09')
+      .replace(/\[/g,'\uFF3B').replace(/\]/g,'\uFF3D')
+      .replace(/\{/g,'\uFF5B').replace(/\}/g,'\uFF5D');
+  }
+  if(s.punct_qmark){
+    out = out.replace(/\?/g,'\uFF1F').replace(/!/g,'\uFF01');
+  }
+  if(s.punct_colon){
+    out = out.replace(/:/g,'\uFF1A').replace(/;/g,'\uFF1B');
+  }
+  if(s.punct_dedup){
+    // 連続する約物の間のスペース(半角/全角)を削除
+    // 半角・全角の約物両方に対応
+    const punctClass = '[、。，．！？：；,.!?:;\\uFF01\\uFF1F\\uFF1A\\uFF1B]';
+    const re = new RegExp('(' + punctClass + ')[ \\u3000]+(?=' + punctClass + ')', 'g');
+    // 連続パターンに対応するため複数回適用
+    let prev;
+    do {
+      prev = out;
+      out = out.replace(re, '$1');
+    } while (out !== prev);
+  }
+
+  // 会社表記
+  if(s.company_mode === 'expand'){
+    out = out
+      .replace(/[(\uFF08]株[)\uFF09]/g,'株式会社')
+      .replace(/[(\uFF08]有[)\uFF09]/g,'有限会社')
+      .replace(/[(\uFF08]社[)\uFF09]/g,'社団法人')
+      .replace(/[(\uFF08]財[)\uFF09]/g,'財団法人')
+      .replace(/[(\uFF08]名[)\uFF09]/g,'合名会社')
+      .replace(/[(\uFF08]資[)\uFF09]/g,'合資会社')
+      .replace(/\u3231/g,'株式会社')  // ㈱
+      .replace(/\u3232/g,'有限会社')  // ㈲
+      .replace(/\u3233/g,'社団法人'); // ㈳
+  } else if(s.company_mode === 'abbrev'){
+    out = out
+      .replace(/株式会社/g,'\u3231')
+      .replace(/有限会社/g,'\u3232')
+      .replace(/社団法人/g,'\u3233')
+      .replace(/財団法人/g,'\u3234')
+      .replace(/合名会社/g,'\uFF08名\uFF09')
+      .replace(/合資会社/g,'\uFF08資\uFF09');
+  }
+
+  // 三点リーダ
+  if(s.ellipsis_mode === 'standard'){
+    out = out.replace(/\.{3,}/g,'\u2026').replace(/\u22EF/g,'\u2026');
+  } else if(s.ellipsis_mode === 'midline'){
+    out = out.replace(/\.{3,}/g,'\u22EF').replace(/\u2026/g,'\u22EF');
+  }
+  if(s.ellipsis_double){
+    out = out.replace(/(?<!\u2026)\u2026(?!\u2026)/g,'\u2026\u2026');
+    out = out.replace(/(?<!\u22EF)\u22EF(?!\u22EF)/g,'\u22EF\u22EF');
+  }
+
+  // 引用符
+  if(s.quote_mode === 'curly'){
+    // ダブルクォーテーション(カーリークオート)
+    let dq=true, sq=true;
+    out = out.replace(/["\u201C\u201D\u301D\u301F]/g, () => (dq=!dq) ? '\u201D' : '\u201C');
+    out = out.replace(/['\u2018\u2019]/g, () => (sq=!sq) ? '\u2019' : '\u2018');
+  } else if(s.quote_mode === 'minute'){
+    // ダブルミニュート(縦組み用 〝 〟)
+    let dq=true;
+    out = out.replace(/["\u201C\u201D\u301D\u301F]/g, () => (dq=!dq) ? '\u301F' : '\u301D');
+  }
+
+  // 波ダッシュ
+  if(s.wave_mode === 'jis'){
+    out = out.replace(/[\uFF5E~]/g,'\u301C');
+  } else if(s.wave_mode === 'fw'){
+    out = out.replace(/[\u301C~]/g,'\uFF5E');
+  }
+
+  // ハイフン/ダーシ統一
+  if(s.dash_unify){
+    out = out.replace(/[\u2010\u2011\u2013\u2014\u2015]/g,'\u30FC');
+  }
+
+  // 数字
+  if(s.num_mode === 'half'){
+    out = toHalfDigit(out);
+  } else if(s.num_mode === 'full'){
+    out = toFullDigit(out);
+  } else if(s.num_mode === 'dtp'){
+    // 一旦半角に揃えてから処理
+    out = toHalfDigit(out);
+    out = out.replace(/\d+/g, m => m.length === 1 ? toFullDigit(m) : m);
+  } else if(s.num_mode === 'kanji_positional'){
+    out = convertToKanji(out, 'positional', s.kanji_skip_special);
+  } else if(s.num_mode === 'kanji_simple'){
+    out = convertToKanji(out, 'simple', s.kanji_skip_special);
+  }
+
+  // 英字
+  if(s.alpha_mode === 'half'){
+    out = toHalfAlpha(out);
+  } else if(s.alpha_mode === 'full'){
+    out = toFullAlpha(out);
+  }
+
+  // スペース処理
+  if(s.space_mode === 'full2half'){
+    out = out.replace(/\u3000/g,' ');
+  } else if(s.space_mode === 'half2full'){
+    out = out.replace(/ /g,'\u3000');
+  }
+  if(s.space_squeeze){
+    out = out.replace(/ +/g,' ').replace(/\u3000+/g,'\u3000');
+  }
+  if(s.space_aeqj){
+    // 和文と英数字の間に半角スペースを挿入
+    out = out.replace(/([\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々〆])([A-Za-z0-9])/g,'$1 $2');
+    out = out.replace(/([A-Za-z0-9])([\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF々〆])/g,'$1 $2');
+  }
+  if(s.space_trim){
+    out = out.split('\n').map(l => l.replace(/^[ 　\t]+|[ 　\t]+$/g,'')).join('\n');
+  }
+  if(s.blank_line){
+    out = out.replace(/\n{3,}/g,'\n\n');
+  }
+
+  return out;
+}
+
+/* 環境依存文字検出 */
+const ENV_CHARS = /[①-⑳㈱㈲㊤㊥㊦㊧㊨㍿℡№㎜㎝㎞㎎㎏㎡㊀-㊰⒈-⒛Ⅰ-ⅻ]/g;
+function detectEnv(text){
+  const set = new Set();
+  let m;
+  while((m = ENV_CHARS.exec(text)) !== null){
+    set.add(m[0]);
+  }
+  return [...set];
+}
+
+/* =========================================================
+   UI構築
+   ========================================================= */
+const optsEl = document.getElementById('optionsContainer');
+function buildOptions(){
+  optsEl.innerHTML = '';
+  OPTION_GROUPS.forEach((g, idx) => {
+    const group = document.createElement('div');
+    group.className = 'opt-group' + (idx === 0 ? ' open' : '');
+    group.innerHTML = `
+      <div class="opt-head">
+        <h3>${g.ja}</h3>
+        <span class="arrow">›</span>
+      </div>
+      <div class="opt-body" data-group="${g.id}"></div>
+    `;
+    const body = group.querySelector('.opt-body');
+    g.items.forEach(item => {
+      if(item.type === 'check'){
+        const lbl = document.createElement('label');
+        lbl.className = 'opt-item';
+        lbl.innerHTML = `<input type="checkbox" id="${item.id}" ${item.default?'checked':''}><span>${item.label}</span>`;
+        body.appendChild(lbl);
+      } else if(item.type === 'radio'){
+        const wrap = document.createElement('div');
+        wrap.className = 'radio-group';
+        item.options.forEach(o => {
+          const lbl = document.createElement('label');
+          lbl.className = 'opt-item';
+          lbl.innerHTML = `<input type="radio" name="${item.id}" value="${o.value}" ${o.value===item.default?'checked':''}><span>${o.label}</span>`;
+          wrap.appendChild(lbl);
+        });
+        body.appendChild(wrap);
+      }
+    });
+    group.querySelector('.opt-head').addEventListener('click', () => {
+      group.classList.toggle('open');
+    });
+    optsEl.appendChild(group);
+  });
+  // イベント
+  optsEl.querySelectorAll('input').forEach(el => {
+    el.addEventListener('change', () => {
+      if(document.getElementById('realtimeToggle').checked) runConvert();
+    });
+  });
+}
+
+function readSettings(){
+  const s = {};
+  OPTION_GROUPS.forEach(g => {
+    g.items.forEach(item => {
+      if(item.type === 'check'){
+        s[item.id] = document.getElementById(item.id).checked;
+      } else if(item.type === 'radio'){
+        const el = document.querySelector(`input[name="${item.id}"]:checked`);
+        s[item.id] = el ? el.value : item.default;
+      }
+    });
+  });
+  return s;
+}
+
+function applySettings(s){
+  OPTION_GROUPS.forEach(g => {
+    g.items.forEach(item => {
+      if(item.type === 'check' && s[item.id] !== undefined){
+        const el = document.getElementById(item.id);
+        if(el) el.checked = s[item.id];
+      } else if(item.type === 'radio' && s[item.id] !== undefined){
+        const el = document.querySelector(`input[name="${item.id}"][value="${s[item.id]}"]`);
+        if(el) el.checked = true;
+      }
+    });
+  });
+}
+
+/* =========================================================
+   変換実行
+   ========================================================= */
+const inputEl = document.getElementById('input');
+const outputEl = document.getElementById('output');
+const inputCount = document.getElementById('inputCount');
+const outputCount = document.getElementById('outputCount');
+const warningEl = document.getElementById('warning');
+const warningText = document.getElementById('warningText');
+
+let debounceTimer;
+function runConvert(){
+  // プレビュー中なら出力欄は更新せず、バックアップだけ更新する
+  if(typeof isPreviewing === 'function' && isPreviewing()){
+    const text = inputEl.value;
+    const s = readSettings();
+    previewBackup = convert(text, s);
+    inputCount.textContent = `${[...text].length} 文字`;
+    return;
+  }
+  const text = inputEl.value;
+  const s = readSettings();
+  const result = convert(text, s);
+  outputEl.value = result;
+  inputCount.textContent = `${[...text].length} 文字`;
+  outputCount.textContent = `${[...result].length} 文字`;
+
+  if(s.env_detect){
+    const envs = detectEnv(result);
+    if(envs.length){
+      warningEl.classList.add('show');
+      warningText.textContent = `検出された環境依存文字：${envs.join('  ')}`;
+    } else {
+      warningEl.classList.remove('show');
+    }
+  } else {
+    warningEl.classList.remove('show');
+  }
+
+  // 縦組みプレビュー更新(関数定義後のみ呼び出し)
+  if(typeof updateTategumi === 'function') updateTategumi();
+}
+
+function debounceConvert(){
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(runConvert, 80);
+}
+
+inputEl.addEventListener('input', () => {
+  if(document.getElementById('realtimeToggle').checked) debounceConvert();
+  else inputCount.textContent = `${[...inputEl.value].length} 文字`;
+});
+
+// 出力欄を手動編集した場合の文字数更新
+outputEl.addEventListener('input', () => {
+  // プレビュー中の編集はキャンセル(状態の整合性のため)
+  if(typeof isPreviewing === 'function' && isPreviewing()){
+    cancelPreview();
+  }
+  outputCount.textContent = `${[...outputEl.value].length} 文字`;
+});
+
+document.getElementById('convertBtn').addEventListener('click', runConvert);
+
+document.getElementById('realtimeToggle').addEventListener('change', e => {
+  if(e.target.checked) runConvert();
+});
+
+/* =========================================================
+   ボタン類
+   ========================================================= */
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  if(!outputEl.value){ toast('コピーする内容がありません'); return; }
+  try{
+    await navigator.clipboard.writeText(outputEl.value);
+    toast('クリップボードにコピーしました ✓');
+  } catch(e){
+    outputEl.select();
+    document.execCommand('copy');
+    toast('コピーしました ✓');
+  }
+});
+
+document.getElementById('clearBtn').addEventListener('click', () => {
+  inputEl.value = '';
+  outputEl.value = '';
+  inputCount.textContent = '0 文字';
+  outputCount.textContent = '0 文字';
+  warningEl.classList.remove('show');
+});
+
+const SAMPLE = `2026年5月15日(木)、東京で開催されたイベントに3000人が参加しました。
+「これは素晴らしい!」と参加者A氏(35)は語った...
+価格は1,200円〜3,500円で、お問い合わせはinfo@example.comまで。
+※(株)サンプル商事 (有)テスト企画 〒100-0001 ①優勝 ②準優勝`;
+
+document.getElementById('sampleBtn').addEventListener('click', () => {
+  inputEl.value = SAMPLE;
+  runConvert();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  OPTION_GROUPS.forEach(g => {
+    g.items.forEach(item => {
+      if(item.type === 'check'){
+        document.getElementById(item.id).checked = item.default;
+      } else if(item.type === 'radio'){
+        const el = document.querySelector(`input[name="${item.id}"][value="${item.default}"]`);
+        if(el) el.checked = true;
+      }
+    });
+  });
+  runConvert();
+  toast('設定をリセットしました');
+});
+
+/* =========================================================
+   プリセット管理
+   ========================================================= */
+const STORAGE_KEY = 'mojikumi_presets_v1';
+function loadUserPresets(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveUserPresets(data){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+const presetSelect = document.getElementById('presetSelect');
+function refreshPresetList(selectedKey){
+  presetSelect.innerHTML = '';
+  const optG1 = document.createElement('optgroup');
+  optG1.label = '── 標準プリセット ──';
+  Object.entries(BUILT_IN_PRESETS).forEach(([k,v]) => {
+    const o = document.createElement('option');
+    o.value = 'builtin:'+k;
+    o.textContent = v.name;
+    optG1.appendChild(o);
+  });
+  presetSelect.appendChild(optG1);
+
+  const user = loadUserPresets();
+  if(Object.keys(user).length){
+    const optG2 = document.createElement('optgroup');
+    optG2.label = '── ユーザープリセット ──';
+    Object.entries(user).forEach(([k,v]) => {
+      const o = document.createElement('option');
+      o.value = 'user:'+k;
+      o.textContent = v.name;
+      optG2.appendChild(o);
+    });
+    presetSelect.appendChild(optG2);
+  }
+  if(selectedKey) presetSelect.value = selectedKey;
+}
+
+presetSelect.addEventListener('change', () => {
+  const v = presetSelect.value;
+  const [type, key] = v.split(':');
+  let preset;
+  if(type === 'builtin') preset = BUILT_IN_PRESETS[key];
+  else preset = loadUserPresets()[key];
+  if(preset){
+    applySettings(preset.settings);
+    runConvert();
+    toast(`「${preset.name}」を適用`);
+  }
+});
+
+document.getElementById('presetSave').addEventListener('click', () => {
+  const name = prompt('プリセット名を入力してください', '新しいプリセット');
+  if(!name) return;
+  const user = loadUserPresets();
+  const key = 'p_' + Date.now();
+  user[key] = { name, settings: readSettings() };
+  saveUserPresets(user);
+  refreshPresetList('user:'+key);
+  toast(`「${name}」を保存しました`);
+});
+
+document.getElementById('presetDelete').addEventListener('click', () => {
+  const v = presetSelect.value;
+  if(!v.startsWith('user:')){ toast('標準プリセットは削除できません'); return; }
+  const [, key] = v.split(':');
+  const user = loadUserPresets();
+  if(!user[key]) return;
+  if(!confirm(`「${user[key].name}」を削除しますか？`)) return;
+  delete user[key];
+  saveUserPresets(user);
+  refreshPresetList();
+  toast('削除しました');
+});
+
+document.getElementById('presetExport').addEventListener('click', () => {
+  const data = { user: loadUserPresets(), exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mojikumi_presets.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('エクスポートしました');
+});
+
+document.getElementById('presetImport').addEventListener('click', () => {
+  document.getElementById('importFile').click();
+});
+document.getElementById('importFile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try{
+      const data = JSON.parse(ev.target.result);
+      if(!data.user) throw new Error('invalid');
+      const current = loadUserPresets();
+      saveUserPresets({...current, ...data.user});
+      refreshPresetList();
+      toast('インポートしました');
+    } catch(err){
+      toast('ファイル形式が正しくありません');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* =========================================================
+   縦組みプレビュー
+   ========================================================= */
+const tategumiBtn = document.getElementById('tategumiBtn');
+const tategumiPreview = document.getElementById('tategumiPreview');
+const outputPane = outputEl.closest('.pane.output');
+let tategumiActive = false;
+
+function updateTategumi(){
+  if(tategumiActive){
+    tategumiPreview.textContent = outputEl.value;
+  }
+}
+
+function toggleTategumi(){
+  tategumiActive = !tategumiActive;
+  if(tategumiActive){
+    // プレビューモードに切替
+    tategumiBtn.classList.add('active');
+    outputPane.classList.add('tategumi-mode');
+    tategumiPreview.classList.add('show');
+    updateTategumi();
+  } else {
+    // 通常モードに戻す
+    tategumiBtn.classList.remove('active');
+    outputPane.classList.remove('tategumi-mode');
+    tategumiPreview.classList.remove('show');
+  }
+}
+
+tategumiBtn.addEventListener('click', toggleTategumi);
+
+// 出力欄の内容が変わったら縦組みプレビューも追従
+outputEl.addEventListener('input', updateTategumi);
+
+/* =========================================================
+   検索置換
+   ========================================================= */
+const findBar = document.getElementById('findBar');
+const findInput = document.getElementById('findInput');
+const replaceInput = document.getElementById('replaceInput');
+const findCountEl = document.getElementById('findCount');
+const findCaseEl = document.getElementById('findCase');
+const findRegexEl = document.getElementById('findRegex');
+const previewBanner = document.getElementById('previewBanner');
+const previewInfo = document.getElementById('previewInfo');
+
+let findMatches = [];
+let findIndex = -1;
+let previewBackup = null;
+
+function isPreviewing(){ return previewBackup !== null; }
+
+function buildFindRegex(){
+  const q = findInput.value;
+  if(!q) return null;
+  try{
+    if(findRegexEl.checked){
+      return new RegExp(q, findCaseEl.checked ? 'g' : 'gi');
+    } else {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(escaped, findCaseEl.checked ? 'g' : 'gi');
+    }
+  } catch(e){
+    return null;
+  }
+}
+
+function findAll(){
+  if(isPreviewing()) return;
+  findMatches = [];
+  const re = buildFindRegex();
+  if(!re){
+    findCountEl.textContent = '0件';
+    findCountEl.classList.remove('has-match');
+    findIndex = -1;
+    return;
+  }
+  const text = outputEl.value;
+  let m;
+  while((m = re.exec(text)) !== null){
+    findMatches.push({start: m.index, end: m.index + m[0].length});
+    if(m[0].length === 0){ re.lastIndex++; }
+  }
+  if(findMatches.length === 0){
+    findCountEl.textContent = '0件';
+    findCountEl.classList.remove('has-match');
+    findIndex = -1;
+  } else {
+    findCountEl.classList.add('has-match');
+    if(findIndex < 0 || findIndex >= findMatches.length) findIndex = 0;
+    updateFindHighlight();
+  }
+}
+
+function updateFindHighlight(){
+  if(findMatches.length === 0) return;
+  findCountEl.textContent = `${findIndex + 1} / ${findMatches.length}件`;
+  const m = findMatches[findIndex];
+  outputEl.focus();
+  outputEl.setSelectionRange(m.start, m.end);
+  const before = outputEl.value.substring(0, m.start);
+  const lineNum = (before.match(/\n/g) || []).length;
+  const lineHeight = parseFloat(getComputedStyle(outputEl).lineHeight) || 24;
+  outputEl.scrollTop = Math.max(0, lineNum * lineHeight - outputEl.clientHeight / 2);
+}
+
+function findNext(){
+  if(isPreviewing()){ toast('プレビュー中は移動できません'); return; }
+  if(findMatches.length === 0){ findAll(); return; }
+  findIndex = (findIndex + 1) % findMatches.length;
+  updateFindHighlight();
+}
+function findPrev(){
+  if(isPreviewing()){ toast('プレビュー中は移動できません'); return; }
+  if(findMatches.length === 0){ findAll(); return; }
+  findIndex = (findIndex - 1 + findMatches.length) % findMatches.length;
+  updateFindHighlight();
+}
+
+/* プレビュー機能 */
+function showPreview(mode){
+  if(isPreviewing()){
+    toast('既にプレビュー中です');
+    return;
+  }
+  const re = buildFindRegex();
+  if(!re || !findInput.value){
+    toast('検索する文字を入力してください');
+    return;
+  }
+  if(findMatches.length === 0){
+    toast('該当する文字が見つかりません');
+    return;
+  }
+  previewBackup = outputEl.value;
+  const replacement = replaceInput.value;
+  if(mode === 'all'){
+    outputEl.value = previewBackup.replace(re, replacement);
+    previewInfo.textContent = `(${findMatches.length}件をすべて置換)`;
+  } else {
+    if(findIndex < 0 || findIndex >= findMatches.length) findIndex = 0;
+    const m = findMatches[findIndex];
+    outputEl.value = previewBackup.substring(0, m.start) + replacement + previewBackup.substring(m.end);
+    previewInfo.textContent = `(${findIndex + 1}件目を置換)`;
+  }
+  outputCount.textContent = `${[...outputEl.value].length} 文字`;
+  outputEl.classList.add('preview-mode');
+  previewBanner.classList.add('show');
+  document.getElementById('previewBtn').classList.add('active');
+}
+
+function confirmPreview(){
+  if(!isPreviewing()) return;
+  previewBackup = null;
+  outputEl.classList.remove('preview-mode');
+  previewBanner.classList.remove('show');
+  previewInfo.textContent = '';
+  document.getElementById('previewBtn').classList.remove('active');
+  findIndex = -1;
+  findAll();
+  toast('置換を確定しました');
+}
+
+function cancelPreview(){
+  if(!isPreviewing()) return;
+  outputEl.value = previewBackup;
+  outputCount.textContent = `${[...outputEl.value].length} 文字`;
+  previewBackup = null;
+  outputEl.classList.remove('preview-mode');
+  previewBanner.classList.remove('show');
+  previewInfo.textContent = '';
+  document.getElementById('previewBtn').classList.remove('active');
+  findAll();
+}
+
+function openFindBar(){
+  findBar.classList.add('show');
+  setTimeout(() => findInput.focus(), 50);
+  findAll();
+}
+function closeFindBar(){
+  if(isPreviewing()) cancelPreview();
+  findBar.classList.remove('show');
+  findIndex = -1;
+  findMatches = [];
+}
+function toggleFindBar(){
+  if(findBar.classList.contains('show')) closeFindBar();
+  else openFindBar();
+}
+
+document.getElementById('findToggleBtn').addEventListener('click', toggleFindBar);
+document.getElementById('findClose').addEventListener('click', closeFindBar);
+document.getElementById('findNext').addEventListener('click', findNext);
+document.getElementById('findPrev').addEventListener('click', findPrev);
+
+document.getElementById('previewBtn').addEventListener('click', () => {
+  // トグル動作:プレビュー中なら解除、そうでなければプレビュー表示
+  if(isPreviewing()){
+    cancelPreview();
+  } else {
+    showPreview('all');
+  }
+});
+document.getElementById('replaceBtn').addEventListener('click', () => {
+  if(isPreviewing()){ confirmPreview(); return; }
+  showPreview('one');
+});
+document.getElementById('replaceAllBtn').addEventListener('click', () => {
+  if(isPreviewing()){ confirmPreview(); return; }
+  showPreview('all');
+});
+document.getElementById('confirmPreviewBtn').addEventListener('click', confirmPreview);
+document.getElementById('cancelPreviewBtn').addEventListener('click', cancelPreview);
+
+findInput.addEventListener('input', () => {
+  if(isPreviewing()) cancelPreview();
+  findIndex = -1;
+  findAll();
+});
+replaceInput.addEventListener('input', () => {
+  if(isPreviewing()) cancelPreview();
+});
+findCaseEl.addEventListener('change', () => {
+  if(isPreviewing()) cancelPreview();
+  findIndex = -1;
+  findAll();
+});
+findRegexEl.addEventListener('change', () => {
+  if(isPreviewing()) cancelPreview();
+  findIndex = -1;
+  findAll();
+});
+
+findInput.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    if(e.shiftKey) findPrev();
+    else findNext();
+  } else if(e.key === 'Escape'){
+    e.preventDefault();
+    closeFindBar();
+  }
+});
+replaceInput.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    e.preventDefault();
+    closeFindBar();
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if((e.ctrlKey || e.metaKey) && e.key === 'f'){
+    e.preventDefault();
+    toggleFindBar();
+  }
+});
+
+/* =========================================================
+   マニュアル(ヘルプ)モーダル
+   ========================================================= */
+const helpModal = document.getElementById('helpModal');
+const helpContent = document.getElementById('helpContent');
+const helpSearchInput = document.getElementById('helpSearch');
+const helpHit = document.getElementById('helpHit');
+
+function openHelpModal(){
+  helpModal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => helpSearchInput.focus(), 100);
+}
+function closeHelpModal(){
+  helpModal.classList.remove('show');
+  document.body.style.overflow = '';
+  // 検索リセット
+  helpSearchInput.value = '';
+  clearHelpHighlight();
+}
+
+document.getElementById('helpBtn').addEventListener('click', openHelpModal);
+document.getElementById('helpClose').addEventListener('click', closeHelpModal);
+// オーバーレイクリックで閉じる
+helpModal.addEventListener('click', e => {
+  if(e.target === helpModal) closeHelpModal();
+});
+
+// Escで閉じる(モーダル開いている時のみ)
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && helpModal.classList.contains('show')){
+    e.preventDefault();
+    closeHelpModal();
+  }
+});
+
+// ナビリンクのスムーズスクロール&アクティブ状態
+const navLinks = document.querySelectorAll('.modal-nav .nav-link');
+navLinks.forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const targetId = link.getAttribute('href').slice(1);
+    const target = document.getElementById(targetId);
+    if(target){
+      // helpContent内での相対位置を計算
+      const targetRect = target.getBoundingClientRect();
+      const contentRect = helpContent.getBoundingClientRect();
+      const offset = targetRect.top - contentRect.top + helpContent.scrollTop;
+      helpContent.scrollTo({top: offset - 16, behavior:'smooth'});
+    }
+  });
+});
+
+// スクロール監視でアクティブセクション更新
+helpContent.addEventListener('scroll', () => {
+  const sections = helpContent.querySelectorAll('.help-sec');
+  let currentId = '';
+  for(const sec of sections){
+    if(sec.classList.contains('hidden')) continue;
+    const rect = sec.getBoundingClientRect();
+    const contentRect = helpContent.getBoundingClientRect();
+    if(rect.top - contentRect.top < 100){
+      currentId = sec.id;
+    }
+  }
+  navLinks.forEach(l => {
+    if(l.getAttribute('href') === '#' + currentId){
+      l.classList.add('active');
+    } else {
+      l.classList.remove('active');
+    }
+  });
+});
+
+/* ヘルプ内検索 */
+function clearHelpHighlight(){
+  helpContent.querySelectorAll('mark.help-mark').forEach(m => {
+    const parent = m.parentNode;
+    parent.replaceChild(document.createTextNode(m.textContent), m);
+    parent.normalize();
+  });
+  helpContent.querySelectorAll('.help-sec').forEach(s => s.classList.remove('hidden'));
+  helpHit.textContent = '';
+  helpHit.classList.remove('has-match');
+}
+
+function highlightTextNodes(root, regex){
+  let count = 0;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node){
+      if(!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      const p = node.parentElement;
+      if(!p) return NodeFilter.FILTER_REJECT;
+      if(p.tagName === 'SCRIPT' || p.tagName === 'STYLE' || p.tagName === 'MARK') return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  let n;
+  while((n = walker.nextNode())) nodes.push(n);
+  for(const node of nodes){
+    const text = node.nodeValue;
+    if(!regex.test(text)) continue;
+    regex.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let lastIdx = 0;
+    let m;
+    while((m = regex.exec(text)) !== null){
+      if(m.index > lastIdx){
+        frag.appendChild(document.createTextNode(text.substring(lastIdx, m.index)));
+      }
+      const mark = document.createElement('mark');
+      mark.className = 'help-mark';
+      mark.textContent = m[0];
+      frag.appendChild(mark);
+      count++;
+      lastIdx = m.index + m[0].length;
+      if(m[0].length === 0) regex.lastIndex++;
+    }
+    if(lastIdx < text.length){
+      frag.appendChild(document.createTextNode(text.substring(lastIdx)));
+    }
+    node.parentNode.replaceChild(frag, node);
+  }
+  return count;
+}
+
+helpSearchInput.addEventListener('input', () => {
+  clearHelpHighlight();
+  const q = helpSearchInput.value.trim();
+  if(!q) return;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(escaped, 'gi');
+  const sections = helpContent.querySelectorAll('.help-sec');
+  let totalHits = 0;
+  let firstSection = null;
+  sections.forEach(sec => {
+    const before = sec.querySelectorAll('mark.help-mark').length;
+    const hits = highlightTextNodes(sec, regex);
+    totalHits += hits;
+    if(hits === 0){
+      sec.classList.add('hidden');
+    } else {
+      sec.classList.remove('hidden');
+      if(!firstSection) firstSection = sec;
+    }
+  });
+  if(totalHits === 0){
+    helpHit.textContent = '該当なし';
+    helpHit.classList.remove('has-match');
+  } else {
+    helpHit.textContent = `${totalHits}件ヒット`;
+    helpHit.classList.add('has-match');
+    if(firstSection){
+      const targetRect = firstSection.getBoundingClientRect();
+      const contentRect = helpContent.getBoundingClientRect();
+      const offset = targetRect.top - contentRect.top + helpContent.scrollTop;
+      helpContent.scrollTo({top: offset - 16, behavior:'smooth'});
+    }
+  }
+});
+
+helpSearchInput.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    if(helpSearchInput.value){
+      e.preventDefault();
+      e.stopPropagation();
+      helpSearchInput.value = '';
+      clearHelpHighlight();
+    }
+  }
+});
+
+/* =========================================================
+   初期化
+   ========================================================= */
+buildOptions();
+// サイドバーレイアウトでは初期状態で最初のグループ(約物)のみ開く
+document.querySelectorAll('.opt-group').forEach((g, i) => {
+  if(i === 0) g.classList.add('open');
+  else g.classList.remove('open');
+});
+
+document.getElementById('expandAll').addEventListener('click', () => {
+  document.querySelectorAll('.opt-group').forEach(g => g.classList.add('open'));
+});
+document.getElementById('collapseAll').addEventListener('click', () => {
+  document.querySelectorAll('.opt-group').forEach(g => g.classList.remove('open'));
+});
+
+refreshPresetList('builtin:web_horizontal');
+applySettings(BUILT_IN_PRESETS.web_horizontal.settings);
+runConvert();
+</script>
+</body>
+</html>
