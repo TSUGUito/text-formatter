@@ -72,6 +72,16 @@ body{
   padding-left:14px;
   border-left:1px solid var(--line);
 }
+.brand .credit a{
+  color:var(--accent);
+  text-decoration:none;
+  border-bottom:1px solid var(--accent-soft);
+  transition:color 0.15s ease, border-color 0.15s ease;
+}
+.brand .credit a:hover{
+  color:var(--accent-deep);
+  border-bottom-color:var(--accent-deep);
+}
 .preset-bar{
   display:flex;
   align-items:center;
@@ -1065,7 +1075,7 @@ mark.help-mark{
   <header class="header">
     <div class="brand">
       <h1>文字整形ツール</h1>
-      <span class="credit">作成：TSUGU外部</span>
+      <span class="credit">作成：<a href="https://www.tsu-gu.jp/service/03" target="_blank" rel="noopener noreferrer">TSUGUアカデミー</a></span>
       <button class="btn btn-sm btn-help" id="helpBtn">📖 使い方</button>
     </div>
     <div class="preset-bar">
@@ -1177,7 +1187,7 @@ mark.help-mark{
   <div class="footer">
     <div class="footer-main">エディトリアル & DTP のための文字組ツール</div>
     <div class="footer-credit">
-      <span>2026.05.19</span>
+      <span>2026.06.01</span>
       <span class="dot-sep">·</span>
       <span>ver. 1.0</span>
     </div>
